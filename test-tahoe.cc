@@ -41,10 +41,7 @@ NS_LOG_COMPONENT_DEFINE ("FifthScriptExample");
 //           |                     |
 //           +---------------------+
 //                5 Mbps, 2 ms
-
-
-
-
+// This application only send packets as quicly as possible.
 class MyApp : public Application
 {
 public:
@@ -163,40 +160,39 @@ public:
   TahoeTestCase(double RateOfDrop);
   virtual ~TahoeTestCase ();
 
+  //this three functions are public temporary, for debuging this class
+  virtual void DoSetup (void);
+  virtual void DoRun (void);
+  virtual void DoTeardown (void);
     double RateOfDrop;
 
 private:
-    virtual void DoSetup (void);
-    virtual void DoRun (void);
-    virtual void DoTeardown (void);
-  void CwndChange (uint32_t, uint32_t);
-  void SlowStartThreshold (uint32_t, uint32_t);
-  void RxDrop (Ptr<const Packet> p);
-  void ReceivePack (Ptr<const Packet> pack);
-  void SendPack (Ptr<const Packet> pack);
+
+  void CwndChange (uint32_t, uint32_t); // tracing changes of cwnd on n0
+  void SlowStartThreshold (uint32_t, uint32_t);// tracing changes of ssthreshold on n0
+  void RxDrop (Ptr<const Packet> p); // Callback which call, when packet is droped on n1
+  void ReceivePack (Ptr<const Packet> pack); // tracing of accepted packets on n1
+  void SendPack (Ptr<const Packet> pack);// tracing of sended packets on n1
   void afterChanged(); // call after changed cwnd or ssthreashold
-  void changeStateAfterDropAndDelay();
-  void ReceivePackOnSender (Ptr<const Packet> pack);
-  void SendPackOnSender (Ptr<const Packet> pack);
-  void RTOChange(Time oldRTO, Time newRTO);
-  void checkTimeout();
-  void CheckChanges();
-  TcpHeader getTcpHeader(Ptr<const Packet> p);
-  double delayChannel;
-  uint32_t sstreshold;
-  uint32_t cwndOld;
-  uint32_t mss; // how determine at run-time??
-  TestState state;
+  void ReceivePackOnSender (Ptr<const Packet> pack); // tracing of accepted packets on n1
+  void SendPackOnSender (Ptr<const Packet> pack); // tracing of sended packets on n0
+  void RTOChange(Time oldRTO, Time newRTO); // tracing of changes of RTO on socket on n0
+  void checkTimeout(); // check occure timeout or not
+  void CheckChanges(); // check cwnd and ssthreshold after timeout or triple dup
+  TcpHeader getTcpHeader(Ptr<const Packet> p); // get TCPheader from packet
+  double delayChannel; // time of delay of chanal
+  uint32_t sstreshold; // current ssthreashold
+  uint32_t cwndOld; // current cwnd
+  uint32_t mss; // how determine at run-time?? Now it just 536 (get from experience)
+  TestState state; // expected current state of TCPsocket
   uint32_t numberReceivedPack;
   uint32_t numberDupAck;
-  ns3::SequenceNumber32 previousAck;
-  std::list<ns3::SequenceNumber32> sendedSequnces;
-  Time rto;
+  ns3::SequenceNumber32 previousAck; // number previous ack
+  std::list<ns3::SequenceNumber32> sendedSequnces; // list for which sended packets are confirmed
+  Time rto; // current retransmission time out
   bool cwndWasChanged;
   bool ssthdWasChanged;
   bool returnToNormal;
-
-
 
 };
 TahoeTestCase::TahoeTestCase():TestCase("TahoeTest"){
@@ -449,53 +445,55 @@ void TahoeTestCase::DoRun (){
     Simulator::Destroy ();
 
 }
+
 void TahoeTestCase::DoTeardown (){
 
 }
 
+// Now through main-function it was easy to debug my test-case
+//class TahoeTestSuit : public TestSuite
+//{
+//public:
+//  TahoeTestSuit ();
+//};
 
-class TahoeTestSuit : public TestSuite
-{
-public:
-  TahoeTestSuit ();
-};
+//TahoeTestSuit::TahoeTestSuit ()
+//  : TestSuite ("ns3-tcp-tahoe", SYSTEM)
+//{
+//  AddTestCase (new TahoeTestCase(0.0001), TestCase::QUICK);
+//  AddTestCase (new TahoeTestCase(0.001), TestCase::QUICK);
+//  AddTestCase (new TahoeTestCase(0.01), TestCase::QUICK);
+//  AddTestCase (new TahoeTestCase(0.1), TestCase::QUICK);
+//}
 
-TahoeTestSuit::TahoeTestSuit ()
-  : TestSuite ("ns3-tcp-tahoe", SYSTEM)
-{
-  AddTestCase (new TahoeTestCase(0.0001), TestCase::QUICK);
-  AddTestCase (new TahoeTestCase(0.001), TestCase::QUICK);
-  AddTestCase (new TahoeTestCase(0.01), TestCase::QUICK);
-  AddTestCase (new TahoeTestCase(0.1), TestCase::QUICK);
-}
-
-static TahoeTestSuit tahoeTestSuit;
+//static TahoeTestSuit tahoeTestSuit;
 
 
 int
 main (int argc, char *argv[])
 {
-//  TahoeTestCase test1;
-//  test1.RateOfDrop = 0.0001;
-//  test1.DoSetup ();
-//  test1.DoRun ();
-//  test1.DoTeardown ();
-
-//  TahoeTestCase test2;
-//  test2.RateOfDrop = 0.001;
-//  test2.DoSetup ();
-//  test2.DoRun ();
-//  test2.DoTeardown ();
-
-//  TahoeTestCase test3;
-//  test3.RateOfDrop = 0.01;
-//  test3.DoSetup ();
-//  test3.DoRun ();
-//  test3.DoTeardown ();
-
-//  TahoeTestCase test4;
-//  test4.RateOfDrop = 0.1;
-//  test4.DoSetup ();
-//  test4.DoRun ();
-//  test4.DoTeardown ();
+    NS_LOG_UNCOND("Test 1");
+  TahoeTestCase test1;
+  test1.RateOfDrop = 0.0001;
+  test1.DoSetup ();
+  test1.DoRun ();
+  test1.DoTeardown ();
+NS_LOG_UNCOND("Test 2");
+  TahoeTestCase test2;
+  test2.RateOfDrop = 0.001;
+  test2.DoSetup ();
+  test2.DoRun ();
+  test2.DoTeardown ();
+NS_LOG_UNCOND("Test 3");
+  TahoeTestCase test3;
+  test3.RateOfDrop = 0.01;
+  test3.DoSetup ();
+  test3.DoRun ();
+  test3.DoTeardown ();
+NS_LOG_UNCOND("Test 4");
+  TahoeTestCase test4;
+  test4.RateOfDrop = 0.1;
+  test4.DoSetup ();
+  test4.DoRun ();
+  test4.DoTeardown ();
 }
