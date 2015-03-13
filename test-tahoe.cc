@@ -40,7 +40,7 @@ NS_LOG_COMPONENT_DEFINE ("FifthScriptExample");
 //   +----------------+    +----------------+
 //           |                     |
 //           +---------------------+
-//                5 Mbps, 2 ms
+//                5 Mbps, 100 ms
 // This application only send packets as quicly as possible.
 class MyApp : public Application
 {
